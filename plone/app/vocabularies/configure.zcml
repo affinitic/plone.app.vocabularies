@@ -68,6 +68,11 @@
     />
 
   <utility
+    component=".workflow.ActiveWorkflowStatesVocabularyFactory"
+    name="plone.app.vocabularies.ActiveWorkflowStates"
+    />
+
+  <utility
     component=".editors.AvailableEditorsVocabularyFactory"
     name="plone.app.vocabularies.AvailableEditors"
     />

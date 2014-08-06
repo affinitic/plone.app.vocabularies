@@ -229,3 +229,32 @@ class WorkflowTransitionsVocabulary(object):
         return SimpleVocabulary(items)
 
 WorkflowTransitionsVocabularyFactory = WorkflowTransitionsVocabulary()
+
+
+class ActiveWorkflowStatesVocabulary(object):
+    """Vocabulary factory for active workflow states.
+    """
+    implements(IVocabularyFactory)
+
+    def __call__(self, context):
+        site = getSite()
+        wtool = getToolByName(site, 'portal_workflow', None)
+        if wtool is None:
+            return SimpleVocabulary([])
+
+        # we get REQUEST from wtool because context may be an adapter
+        request = aq_get(wtool, 'REQUEST', None)
+
+        used_wf = [wtool[w[0]] for w in wtool.workflows_in_use() if w]
+        items = []
+        [items.extend(w.states.values()) for w in used_wf]
+        items = [(safe_unicode(s.title), s.id) for s in items]
+        items_dict = dict([(i[1], translate(_(i[0]), context=request))
+                           for i in items])
+        items_list = [(k, v) for k, v in items_dict.items()]
+        items_list.sort(lambda x, y: cmp(x[1], y[1]))
+        terms = [SimpleTerm(k, title=u'%s [%s]' % (v, k))
+                 for k, v in items_list]
+        return SimpleVocabulary(terms)
+
+ActiveWorkflowStatesVocabularyFactory = ActiveWorkflowStatesVocabulary()
