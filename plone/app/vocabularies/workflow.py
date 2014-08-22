@@ -233,6 +233,63 @@ WorkflowTransitionsVocabularyFactory = WorkflowTransitionsVocabulary()
 
 class ActiveWorkflowStatesVocabulary(object):
     """Vocabulary factory for active workflow states.
+
+      >>> from zope.component import queryUtility
+      >>> from plone.app.vocabularies.tests.base import create_context
+      >>> from plone.app.vocabularies.tests.base import DummyTool
+
+      >>> name = 'plone.app.vocabularies.ActiveWorkflowStates'
+      >>> util = queryUtility(IVocabularyFactory, name)
+      >>> context = create_context()
+
+      >>> class PortalWorkflow(DummyTool):
+      ...     def __init__(self, name):
+      ...         self.name = name
+
+      >>> def workflows_in_use():
+      ...     return (('simple_publication_workflow'), (), (), (),
+      ...             ('simple_publication_workflow'),)
+
+      >>> tool = DummyTool('portal_workflow')
+      >>> tool.workflows_in_use = workflows_in_use
+
+      >>> class Workflow(object):
+      ...     def __init__(self, id, title, states):
+      ...         self.id = id
+      ...         self.title = title
+      ...         self.states = states
+
+      >>> class State(object):
+      ...     def __init__(self, id, title):
+      ...         self.id = id
+      ...         self.title = title
+
+      >>> states = {'private': State('private', 'Private'),
+      ...           'revisao': State('revisao', 'Revisão'),
+      ...           'published': State('published', 'Published')}
+      >>> wf = Workflow('simple_publication_workflow',
+      ...               'Simple Publication Workflow',
+      ...               states)
+      >>> def getWorkflowById(id):
+      ...     return wf
+
+      >>> tool.getWorkflowById = getWorkflowById
+      >>> context.portal_workflow = tool
+
+      >>> states = util(context)
+      >>> states
+      <zope.schema.vocabulary.SimpleVocabulary object at ...>
+
+      >>> len(states.by_token)
+      3
+
+      >>> pub = states.by_token['published']
+      >>> pub.title, pub.token, pub.value
+      (u'Published [published]', 'published', 'published')
+
+      >>> rev = states.by_token['revisao']
+      >>> rev.title == 'Revisão [revisao]'.decode('utf-8')
+      True
     """
     implements(IVocabularyFactory)
 
@@ -245,7 +302,8 @@ class ActiveWorkflowStatesVocabulary(object):
         # we get REQUEST from wtool because context may be an adapter
         request = aq_get(wtool, 'REQUEST', None)
 
-        used_wf = [wtool[w[0]] for w in wtool.workflows_in_use() if w]
+        used_wf = [wtool.getWorkflowById(w[0])
+                   for w in wtool.workflows_in_use() if w]
         items = []
         [items.extend(w.states.values()) for w in used_wf]
         items = [(safe_unicode(s.title), s.id) for s in items]
