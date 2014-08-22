@@ -113,6 +113,55 @@ class UsersFactory(object):
         return UsersVocabulary.fromItems(users.searchUsers(fullname=query), context)
 
 
+class CreatorsFactory(object):
+    """Vocabulary factory for content creators
+      >>> from zope.component import queryUtility
+      >>> from plone.app.vocabularies.tests.base import create_context
+      >>> from plone.app.vocabularies.tests.base import DummyTool
+
+      >>> name = 'plone.app.vocabularies.Creators'
+      >>> util = queryUtility(IVocabularyFactory, name)
+      >>> context = create_context()
+
+      >>> class User(object):
+      ...     def __init__(self, id, fullname):
+      ...         self.id = id
+      ...         self.fullname = fullname
+      ...     def getProperty(self, key, default):
+      ...         return getattr(self, key, default)
+
+      >>> utool = DummyTool('acl_users')
+      >>> users = {'user1': User('user1', u'User 1'),
+      ...          'user2': User('user2', u'User 2')}
+      >>> def getUserById(value, default):
+      ...     return users.get(value, default)
+      >>> utool.getUserById = getUserById
+      >>> context.acl_users = utool
+
+      >>> ctool = DummyTool('portal_catalog')
+      >>> def uniqueValues(self):
+      ...     return ('admin', 'user2')
+      >>> indexes = {'Creator': type('index', (object, ),
+      ...                            dict(uniqueValues=uniqueValues))()}
+      >>> ctool.Indexes = indexes
+      >>> context.portal_catalog = ctool
+
+      >>> creators = util(context)
+      >>> creators
+      <plone.app.vocabularies.users.UsersVocabulary object at ...>
+
+      >>> sorted([(c.token, c.title) for c in creators])
+      [('admin', 'admin'), ('user2', u'User 2')]
+    """
+    implements(IVocabularyFactory)
+
+    def __call__(self, context, query=''):
+        catalog = getToolByName(context, 'portal_catalog')
+        users = catalog.Indexes['Creator'].uniqueValues()
+        return UsersVocabulary.fromItems([{'userid': u} for u in users],
+                                         context)
+
+
 class UsersSourceQueryView(object):
     """
       >>> from plone.app.vocabularies.tests.base import create_context
