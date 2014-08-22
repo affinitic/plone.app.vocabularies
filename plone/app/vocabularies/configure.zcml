@@ -93,6 +93,11 @@
     />
 
   <utility
+    factory=".users.CreatorsFactory"
+    name="plone.app.vocabularies.Creators"
+    />
+
+  <utility
     factory=".catalog.CatalogVocabularyFactory"
     name="plone.app.vocabularies.Catalog"
     />
